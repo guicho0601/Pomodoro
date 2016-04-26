@@ -221,6 +221,82 @@ var ListaTareas = React.createClass({
     }
 });
 
+var Opciones = React.createClass({
+    componentDidMount: function() {
+        window.fbAsyncInit = function() {
+            FB.init({
+                appId      : '986819111395620',
+                cookie     : true,
+                xfbml      : true,
+                version    : 'v2.1'
+            });
+            FB.getLoginStatus(function(response) {
+                this.statusChangeCallback(response);
+            }.bind(this));
+        }.bind(this);
+
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "//connect.facebook.net/es_LA/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+    },
+    testAPI: function() {
+        console.log('Bienvenido!  Obteniendo tu información.... ');
+        FB.api('/me', function(response) {
+            console.log(response);
+            console.log('Login satisfactorio: ' + response.name);
+            this.setState({login:true,response:response});
+        }.bind(this));
+        FB.api("/me/picture", function (response) {
+            if (response && !response.error) {
+                this.setState({imagen:response.data.url});
+            }
+        }.bind(this));
+    },
+    statusChangeCallback: function(response) {
+        console.log('statusChangeCallback');
+        console.log(response);
+        if (response.status === 'connected') {
+            this.testAPI();
+        } else if (response.status === 'not_authorized') {
+            this.setState({login:false,response:null});
+        } else {
+            this.setState({login:false,response:null});
+        }
+    },
+    checkLoginState: function() {
+        FB.getLoginStatus(function(response) {
+            this.statusChangeCallback(response);
+        }.bind(this));
+    },
+    handleClick: function() {
+        FB.login(this.checkLoginState());
+    },
+    getInitialState(){
+        return {login:false,response:null,imagen:null};
+    },
+    render(){
+        return(
+            <table>
+                <tbody>
+                    <tr>
+                        <td>
+                            {!this.state.login ? <button type="button" className="waves-effect waves-light btn" onClick={this.handleClick}><i className="fa fa-facebook-official"></i> Iniciar sesión</button> :
+                                <div>
+                                    <img src={this.state.imagen} alt="Contact Person"/>
+                                    <h5>{this.state.response.name}</h5>
+                                </div> }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        );
+    }
+});
+
 var Paneles = React.createClass({
     mixins: [LocalStorageMixin],
     comprobarNotificaciones(){
@@ -278,11 +354,18 @@ var Paneles = React.createClass({
     render(){
         return(
             <div className="row">
-                <div className="col m9 center-align">
-                    <h2>Pomodoro</h2>
+                <div className="col m9">
+                    <div className="row valign-wrapper">
+                        <div className="col s2">
+                            <img src="imagenes/pomodoro.png" alt="" className="circle responsive-img"/>
+                        </div>
+                        <div className="col s10">
+                            <h2>Pomodoro</h2>
+                        </div>
+                    </div>
                 </div>
                 <div className="col m3">
-
+                    <Opciones/>
                 </div>
                 <div className="col m9 center-align">
                     <Reloj trabajo={25} descanso={5}/>

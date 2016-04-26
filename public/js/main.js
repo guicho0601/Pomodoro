@@ -23989,6 +23989,101 @@ var ListaTareas = React.createClass({
     }
 });
 
+var Opciones = React.createClass({
+    displayName: 'Opciones',
+
+    componentDidMount: function componentDidMount() {
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: '986819111395620',
+                cookie: true,
+                xfbml: true,
+                version: 'v2.1'
+            });
+            FB.getLoginStatus(function (response) {
+                this.statusChangeCallback(response);
+            }.bind(this));
+        }.bind(this);
+
+        (function (d, s, id) {
+            var js,
+                fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s);js.id = id;
+            js.src = "//connect.facebook.net/es_LA/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        })(document, 'script', 'facebook-jssdk');
+    },
+    testAPI: function testAPI() {
+        console.log('Bienvenido!  Obteniendo tu información.... ');
+        FB.api('/me', function (response) {
+            console.log(response);
+            console.log('Login satisfactorio: ' + response.name);
+            this.setState({ login: true, response: response });
+        }.bind(this));
+        FB.api("/me/picture", function (response) {
+            if (response && !response.error) {
+                this.setState({ imagen: response.data.url });
+            }
+        }.bind(this));
+    },
+    statusChangeCallback: function statusChangeCallback(response) {
+        console.log('statusChangeCallback');
+        console.log(response);
+        if (response.status === 'connected') {
+            this.testAPI();
+        } else if (response.status === 'not_authorized') {
+            this.setState({ login: false, response: null });
+        } else {
+            this.setState({ login: false, response: null });
+        }
+    },
+    checkLoginState: function checkLoginState() {
+        FB.getLoginStatus(function (response) {
+            this.statusChangeCallback(response);
+        }.bind(this));
+    },
+    handleClick: function handleClick() {
+        FB.login(this.checkLoginState());
+    },
+    getInitialState: function getInitialState() {
+        return { login: false, response: null, imagen: null };
+    },
+    render: function render() {
+        return React.createElement(
+            'table',
+            null,
+            React.createElement(
+                'tbody',
+                null,
+                React.createElement(
+                    'tr',
+                    null,
+                    React.createElement(
+                        'td',
+                        null,
+                        !this.state.login ? React.createElement(
+                            'button',
+                            { type: 'button', className: 'waves-effect waves-light btn', onClick: this.handleClick },
+                            React.createElement('i', { className: 'fa fa-facebook-official' }),
+                            ' Iniciar sesión'
+                        ) : React.createElement(
+                            'div',
+                            null,
+                            React.createElement('img', { src: this.state.imagen, alt: 'Contact Person' }),
+                            React.createElement(
+                                'h5',
+                                null,
+                                this.state.response.name
+                            )
+                        )
+                    )
+                )
+            )
+        );
+    }
+});
+
 var Paneles = React.createClass({
     displayName: 'Paneles',
 
@@ -24049,14 +24144,31 @@ var Paneles = React.createClass({
             { className: 'row' },
             React.createElement(
                 'div',
-                { className: 'col m9 center-align' },
+                { className: 'col m9' },
                 React.createElement(
-                    'h2',
-                    null,
-                    'Pomodoro'
+                    'div',
+                    { className: 'row valign-wrapper' },
+                    React.createElement(
+                        'div',
+                        { className: 'col s2' },
+                        React.createElement('img', { src: 'imagenes/pomodoro.png', alt: '', className: 'circle responsive-img' })
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'col s10' },
+                        React.createElement(
+                            'h2',
+                            null,
+                            'Pomodoro'
+                        )
+                    )
                 )
             ),
-            React.createElement('div', { className: 'col m3' }),
+            React.createElement(
+                'div',
+                { className: 'col m3' },
+                React.createElement(Opciones, null)
+            ),
             React.createElement(
                 'div',
                 { className: 'col m9 center-align' },

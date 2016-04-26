@@ -5,7 +5,7 @@ Un sitio web para poder utilizar la técnica pomodoro para las personas que trab
 ##Autores
 Estudiantes de Maestría de Ingeniería en Sistemas en el curso de Ética Profesionel del año 2016.
 
-![UMG logotipo](https://www.umg.edu.gt/wp-content/uploads/2016/01/480.png)
+![UMG logotipo](http://panoramanoticias.com/wp-content/uploads/2014/10/umg.png)
 
 ## Licencia
 
