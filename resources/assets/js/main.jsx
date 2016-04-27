@@ -1,8 +1,7 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 var moment = require('moment');
-var LocalStorageMixin = require('react-localstorage');
-var FacebookLogin = require('react-facebook-login');
+require('moment/locale/es');
 
 moment.locale('es');
 const responseFacebook = (response) => {
@@ -24,44 +23,6 @@ var opciones_repetir = [
 ];
 
 var NuevaTarea = require('./NuevaTarea.jsx');
-
-var FBLogin = React.createClass({
-    componentWillMount: function () {
-        window['statusChangeCallback'] = this.statusChangeCallback;
-        window['checkLoginState'] = this.checkLoginState;
-    },
-    componentDidMount: function () {
-        var s = '<div class="fb-login-button" ' +
-            'data-scope="public_profile,email" data-size="large" ' +
-            'data-show-faces="false" data-auto-logout-link="true" ' +
-            'onlogin="checkLoginState"></div>';
-
-        var div = document.getElementById('social-login-button-facebook')
-        div.innerHTML = s;
-    },
-    componentWillUnmount: function () {
-        delete window['statusChangeCallback'];
-        delete window['checkLoginState'];
-    },
-    statusChangeCallback: function(response) {
-        console.log(response);
-    },
-    // Callback for Facebook login button
-    checkLoginState: function() {
-        console.log('checking login state...');
-        FB.getLoginStatus(function(response) {
-            statusChangeCallback(response);
-        });
-    },
-    render: function() {
-
-        return (
-            <div id='social-login-button-facebook'>
-
-            </div>
-        );
-    }
-});
 
 var Canvas = React.createClass({
     componentDidMount(){
@@ -126,6 +87,7 @@ var Reloj = React.createClass({
             var t = this.getMinutosSegundos((es_descanso?this.props.trabajo:this.props.descanso)*60000);
             clearInterval(this.state.intervalo);
             this.setState({intervalo:null,trabajando:false,transcurrido:0,texto:t,porcentaje:1,es_descanso:!es_descanso});
+            PNotify.desktop.permission();
             if(!es_descanso){
                 (new PNotify({
                     title: 'Tiempo de descansar',
@@ -180,7 +142,8 @@ var ItemTarea = React.createClass({
         var tarea = this.props.tarea;
         return moment().hour(tarea.hora).minute(tarea.minuto).format('HH:mm');
     },
-    quitar(){
+    quitar(e){
+        e.preventDefault();
         this.props.quitarTarea(this.props.tarea.id);
     },
     render(){
@@ -221,7 +184,7 @@ var ListaTareas = React.createClass({
     }
 });
 
-var Opciones = React.createClass({
+var Perfil = React.createClass({
     componentDidMount: function() {
         window.fbAsyncInit = function() {
             FB.init({
@@ -253,6 +216,7 @@ var Opciones = React.createClass({
         FB.api("/me/picture", function (response) {
             if (response && !response.error) {
                 this.setState({imagen:response.data.url});
+                this.props.obtenerTareas({id:this.state.response.id,nombre:this.state.response.name,imagen:response.data.url});
             }
         }.bind(this));
     },
@@ -272,39 +236,73 @@ var Opciones = React.createClass({
             this.statusChangeCallback(response);
         }.bind(this));
     },
-    handleClick: function() {
+    handleClick: function(e) {
         FB.login(this.checkLoginState());
+        e.target.disabled = true;
     },
     getInitialState(){
         return {login:false,response:null,imagen:null};
     },
+    logout(){
+        FB.logout(function(response){
+            if (response && !response.error) {
+                this.setState({login: false, response: null, imagen: null});
+            }
+        }.bind(this));
+    },
     render(){
         return(
-            <table>
-                <tbody>
-                    <tr>
-                        <td>
-                            {!this.state.login ? <button type="button" className="waves-effect waves-light btn" onClick={this.handleClick}><i className="fa fa-facebook-official"></i> Iniciar sesión</button> :
-                                <div>
-                                    <img src={this.state.imagen} alt="Contact Person"/>
-                                    <h5>{this.state.response.name}</h5>
-                                </div> }
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <ul className="collection">
+                {!this.state.login ? <li className={"collection-item darken-3 "+color}><button type="button" className="waves-effect waves-light btn blue" onClick={this.handleClick}><i className="fa fa-facebook-official"></i> Iniciar sesión</button></li> :
+                <li className={"collection-item avatar darken-3 "+color}>
+                    <img src={this.state.imagen} alt="Contact Person" className="circle"/>
+                    <span className="title">{this.state.response.name}</span>
+                    <p><a href="#!" className="waves-effect waves-light btn" onClick={this.logout}>Cerrar sesión</a></p>
+                </li>}
+            </ul>
         );
     }
 });
 
 var Paneles = React.createClass({
-    mixins: [LocalStorageMixin],
+    obtenerTareas(data){
+        if(data==null)
+            data = {id:this.state.id_usuario};
+        else
+            this.setState({id_usuario:data.id});
+        data._token = csrf_token;
+        $.ajax({
+            url: url_global + '/tareas',
+            type: 'POST',
+            cache: false,
+            dataType: 'json',
+            data:data,
+            success: function (data) {
+                this.setState({tareas:data});
+            }.bind(this)
+        });
+    },
+    actualizarTarea(tarea){
+        tarea._token = csrf_token;
+        tarea._method = 'PATCH';
+        $.ajax({
+            url: url_global + '/tarea/'+tarea.id,
+            type: 'POST',
+            cache: false,
+            dataType: 'json',
+            data:tarea,
+            success: function (data) {
+                this.setState({tareas:data});
+            }.bind(this)
+        });
+    },
     comprobarNotificaciones(){
         var tareas = this.state.tareas;
         var ahora = moment();
         tareas.map(function(tarea,index){
             if(tarea!=null){
                 if(ahora.hour() == tarea.hora && ahora.minute() == tarea.minuto){
+                    PNotify.desktop.permission();
                     (new PNotify({
                         title: 'Recordatorio',
                         text: tarea.nombre,
@@ -316,11 +314,13 @@ var Paneles = React.createClass({
                         var proximo = moment().add(opciones_repetir[tarea.repetir].minutos,'minutes');
                         tarea.hora = proximo.hour();
                         tarea.minuto = proximo.minute();
+                        if(this.state.id_usuario>0)
+                            this.actualizarTarea(tarea);
                     }else
                         tareas.splice(index,1);
                 }
             }
-        });
+        }.bind(this));
         this.setState({tareas:tareas});
     },
     componentDidMount(){
@@ -331,25 +331,57 @@ var Paneles = React.createClass({
     },
     getInitialState(){
         return {
-            tareas:[]
+            tareas:[],id_usuario:0
         };
     },
     agregarTarea(tarea){
-        var tareas = this.state.tareas;
-        tareas.push(tarea);
-        this.setState({tareas:tareas});
+        if(this.state.id_usuario==0) {
+            tarea.id = Math.floor((Math.random() * 10000) + 1);
+            var tareas = this.state.tareas;
+            tareas.push(tarea);
+            this.setState({tareas: tareas});
+        }else{
+            tarea._token = csrf_token;
+            tarea.id_usuario = this.state.id_usuario;
+            $.ajax({
+                url:url_global+'/tarea',
+                type: 'POST',
+                cache: false,
+                dataType: 'json',
+                data:tarea,
+                success: function (data) {
+                    this.setState({tareas:data});
+                }.bind(this)
+            });
+        }
     },
     quitarTarea(tarea){
-        var tareas = this.state.tareas;
-        var posicion = -1;
-        for(var i=0;i<tareas.length;i++)
-            if(tareas[i] != null && tareas[i].id==tarea) {
-                posicion = i;
-                break;
-            }
-        if(posicion>-1)
-            tareas.splice(posicion, 1);
-        this.setState({tareas:tareas});
+        if(this.state.id_usuario==0) {
+            var tareas = this.state.tareas;
+            var posicion = -1;
+            for (var i = 0; i < tareas.length; i++)
+                if (tareas[i] != null && tareas[i].id == tarea) {
+                    posicion = i;
+                    break;
+                }
+            if (posicion > -1)
+                tareas.splice(posicion, 1);
+            this.setState({tareas: tareas});
+        }else{
+            $.ajax({
+                url: url_global + '/tarea/'+tarea,
+                type: 'POST',
+                cache: false,
+                dataType: 'json',
+                data:{
+                    _token:csrf_token,
+                    _method:'DELETE'
+                },
+                success: function (data) {
+                    this.setState({tareas:data});
+                }.bind(this)
+            });
+        }
     },
     render(){
         return(
@@ -365,7 +397,7 @@ var Paneles = React.createClass({
                     </div>
                 </div>
                 <div className="col m3">
-                    <Opciones/>
+                    <Perfil obtenerTareas={this.obtenerTareas}/>
                 </div>
                 <div className="col m9 center-align">
                     <Reloj trabajo={25} descanso={5}/>

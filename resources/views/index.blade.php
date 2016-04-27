@@ -11,6 +11,8 @@
     <script src="<?=asset('js/all.js')?>"></script>
     <script>
         var color = '<?=$color?>';
+        var url_global = '<?=url('/')?>';
+        var csrf_token = '<?=csrf_token()?>';
     </script>
     <script src="<?=asset('js/main.js')?>"></script>
 </body>

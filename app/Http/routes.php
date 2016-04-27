@@ -16,3 +16,8 @@ Route::get('/', function () {
     $color = $colores[rand(0,count($colores)-1)];
     return view('index',compact('color'));
 });
+
+Route::post('tareas','UsuarioController@tareas');
+Route::post('tarea','UsuarioController@agregar_tarea');
+Route::patch('tarea/{id}','UsuarioController@actualizar');
+Route::delete('tarea/{id}','UsuarioController@eliminar');

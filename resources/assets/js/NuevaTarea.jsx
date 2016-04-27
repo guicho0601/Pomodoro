@@ -33,7 +33,6 @@ var NuevaTarea = React.createClass({
     },
     guardar(){
         var tarea = {
-            id:Math.floor((Math.random() * 10000) + 1),
             nombre:this.state.nombre,
             hora:this.state.hora,
             minuto:this.state.minuto,
