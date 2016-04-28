@@ -23906,7 +23906,7 @@ var Perfil = React.createClass({
     },
     handleClick: function handleClick(e) {
         FB.login(this.checkLoginState());
-        e.target.disabled = true;
+        //e.target.disabled = true;
     },
     getInitialState: function getInitialState() {
         return { login: false, response: null, imagen: null };
@@ -23915,6 +23915,7 @@ var Perfil = React.createClass({
         FB.logout(function (response) {
             if (response && !response.error) {
                 this.setState({ login: false, response: null, imagen: null });
+                location.reload();
             }
         }.bind(this));
     },
@@ -23957,7 +23958,7 @@ var Perfil = React.createClass({
 var Paneles = React.createClass({
     displayName: 'Paneles',
     obtenerTareas: function obtenerTareas(data) {
-        if (data == null) data = { id: this.state.id_usuario };else this.setState({ id_usuario: data.id });
+        this.setState({ id_usuario: data.id });
         data._token = csrf_token;
         $.ajax({
             url: url_global + '/tareas',

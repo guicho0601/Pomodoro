@@ -12,7 +12,7 @@ class CrearTablaUsuario extends Migration
      */
     public function up()
     {
-        Schema::table('usuario', function (Blueprint $table) {
+        Schema::create('usuario', function (Blueprint $table) {
             $table->bigInteger('id');
             $table->string('nombre',100);
             $table->string('imagen',100);

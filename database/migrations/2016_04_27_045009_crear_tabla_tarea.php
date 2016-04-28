@@ -12,7 +12,7 @@ class CrearTablaTarea extends Migration
      */
     public function up()
     {
-        Schema::table('tarea', function (Blueprint $table) {
+        Schema::create('tarea', function (Blueprint $table) {
             $table->increments('id');
             $table->bigInteger('id_usuario');
             $table->text('nombre');
